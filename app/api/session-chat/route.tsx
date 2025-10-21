@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/shared/db";
+import { prisma } from "@/lib/prisma";
 
 // GET - Fetch session details
 export async function GET(req: NextRequest) {
