@@ -12,7 +12,8 @@ const grok = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { conversationHistory, patientInfo, sessionId } = await request.json();
+    const { conversationHistory, patientInfo, sessionId } =
+      await request.json();
 
     console.log("📋 Generating medical report for session:", sessionId);
 
@@ -20,9 +21,12 @@ export async function POST(request: NextRequest) {
     const reportPrompt = `You are a medical documentation AI. Based on the following patient conversation, generate a comprehensive SYMPTOM DIARY and MEDICAL REPORT that will be helpful for the doctor.
 
 **CONVERSATION HISTORY:**
-${conversationHistory.map((msg: any, idx: number) => 
-  `${msg.role === 'user' ? 'Patient' : 'AI Assistant'}: ${msg.content}`
-).join('\n\n')}
+${conversationHistory
+  .map(
+    (msg: any, idx: number) =>
+      `${msg.role === "user" ? "Patient" : "AI Assistant"}: ${msg.content}`
+  )
+  .join("\n\n")}
 
 **GENERATE A STRUCTURED MEDICAL REPORT WITH THE FOLLOWING SECTIONS:**
 
@@ -90,9 +94,21 @@ Format the report professionally, use medical terminology appropriately, and mak
       max_tokens: 1500,
     });
 
-    const report = response.choices[0]?.message?.content || "Unable to generate report";
+    const report =
+      response.choices[0]?.message?.content || "Unable to generate report";
 
     console.log("✅ Report generated successfully");
 
     return NextResponse.json({
-      report
+      report,
+      generatedAt: new Date().toISOString(),
+      sessionId,
+    });
+  } catch (error: any) {
+    console.error("❌ Error generating report:", error);
+    return NextResponse.json(
+      { error: "Failed to generate report", details: error.message },
+      { status: 500 }
+    );
+  }
+}
