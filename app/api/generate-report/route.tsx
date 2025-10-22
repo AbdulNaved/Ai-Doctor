@@ -1,114 +1,180 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
+const API_KEY = process.env.OPENROUTER_API_KEY;
+
+if (!API_KEY) {
+  console.error("❌ Report API: OPENROUTER_API_KEY missing");
+} else {
+  console.log("✅ Report API: OpenRouter key found");
+}
+
 const grok = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY || "",
+  apiKey: API_KEY || "",
   baseURL: "https://openrouter.ai/api/v1",
   defaultHeaders: {
     "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    "X-Title": "Medical Voice Agent",
+    "X-Title": "Medical Voice Agent - Report",
   },
 });
 
+function generateFallbackReport(sessionId: string, messages: any[]): string {
+  const timestamp = new Date().toLocaleString();
+  const patientMsgs = messages.filter((m) => m.role === "user");
+  const aiMsgs = messages.filter((m) => m.role === "assistant");
+
+  return `
+═══════════════════════════════════════════════════════════
+              MEDICAL CONSULTATION REPORT
+═══════════════════════════════════════════════════════════
+
+Session ID: ${sessionId}
+Date & Time: ${timestamp}
+Consultation Type: AI Medical Assistant
+
+CONVERSATION SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Messages: ${messages.length}
+Patient Messages: ${patientMsgs.length}
+AI Responses: ${aiMsgs.length}
+
+PATIENT STATEMENTS:
+${patientMsgs.map((m, i) => `${i + 1}. ${m.content}`).join("\n")}
+
+AI DOCTOR RESPONSES:
+${aiMsgs.map((m, i) => `${i + 1}. ${m.content}`).join("\n")}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NOTE: Full AI-generated analysis unavailable. Please review 
+conversation above for patient information and symptoms discussed.
+
+For comprehensive evaluation, patient should consult healthcare professional.
+
+═══════════════════════════════════════════════════════════
+Generated: ${timestamp}
+═══════════════════════════════════════════════════════════
+`;
+}
+
 export async function POST(request: NextRequest) {
+  let sessionId = "unknown";
+
   try {
-    const { conversationHistory, patientInfo, sessionId } =
-      await request.json();
+    console.log("\n=== REPORT GENERATION ===");
 
-    console.log("📋 Generating medical report for session:", sessionId);
+    const body = await request.json();
+    const { conversationHistory, patientInfo, sessionId: reqSessionId } = body;
 
-    // Create report generation prompt
-    const reportPrompt = `You are a medical documentation AI. Based on the following patient conversation, generate a comprehensive SYMPTOM DIARY and MEDICAL REPORT that will be helpful for the doctor.
+    sessionId = reqSessionId || "unknown";
 
-**CONVERSATION HISTORY:**
-${conversationHistory
-  .map(
-    (msg: any, idx: number) =>
-      `${msg.role === "user" ? "Patient" : "AI Assistant"}: ${msg.content}`
-  )
-  .join("\n\n")}
+    console.log("📊 Data:", {
+      hasConversation: !!conversationHistory,
+      messageCount: conversationHistory?.length || 0,
+      sessionId,
+    });
 
-**GENERATE A STRUCTURED MEDICAL REPORT WITH THE FOLLOWING SECTIONS:**
+    if (!conversationHistory || !Array.isArray(conversationHistory)) {
+      return NextResponse.json({
+        report: generateFallbackReport(sessionId, []),
+        warning: "No conversation history",
+      });
+    }
 
-1. **PATIENT INFORMATION**
-   - Name: [Extract from conversation]
-   - Age: [Extract from conversation]
-   - Date of Consultation: ${new Date().toLocaleDateString()}
+    if (conversationHistory.length === 0) {
+      return NextResponse.json({
+        report: generateFallbackReport(sessionId, []),
+        warning: "Empty conversation",
+      });
+    }
+
+    if (!API_KEY) {
+      console.error("❌ No API key");
+      return NextResponse.json({
+        report: generateFallbackReport(sessionId, conversationHistory),
+        warning: "API key not configured",
+      });
+    }
+
+    const formattedConversation = conversationHistory
+      .map((msg: any, idx: number) => {
+        const role = msg.role === "user" ? "PATIENT" : "AI DOCTOR";
+        const time = msg.timestamp
+          ? new Date(msg.timestamp).toLocaleTimeString()
+          : `[${idx + 1}]`;
+        return `[${time}] ${role}: ${msg.content}`;
+      })
+      .join("\n\n");
+
+    const reportPrompt = `Generate a medical consultation report from this conversation:
+
+**CONVERSATION:**
+${formattedConversation}
+
+**SESSION:** ${sessionId}
+**DATE:** ${new Date().toLocaleDateString()}
+**DOCTOR:** ${patientInfo?.doctorName || "AI Medical Assistant"}
+
+Generate a structured report with these sections:
+
+1. PATIENT INFORMATION
+   - Name, age (from conversation)
    - Session ID: ${sessionId}
+   - Date: ${new Date().toLocaleDateString()}
 
-2. **CHIEF COMPLAINT**
-   - Primary symptoms mentioned by patient
-   - Duration of symptoms
+2. CHIEF COMPLAINT
+   - Main symptoms
 
-3. **SYMPTOM DIARY** (Detailed Timeline)
-   - When symptoms started (date/time if mentioned)
-   - Symptom progression over time
-   - Severity ratings (if mentioned, use 1-10 scale)
-   - Triggering factors (if any mentioned)
-   - Relieving factors (if any mentioned)
+3. SYMPTOM DETAILS
+   - What, when, severity, duration
 
-4. **ASSOCIATED SYMPTOMS**
-   - All secondary symptoms mentioned
-   - Pattern of occurrence (constant, intermittent, etc.)
+4. ASSESSMENT
+   - Possible conditions
+   - Reasoning
 
-5. **MEDICAL HISTORY GATHERED**
-   - Previous conditions mentioned
-   - Current medications (if any)
-   - Allergies (if mentioned)
-   - Recent exposures or travel
+5. RECOMMENDATIONS
+   - Home remedies given
+   - OTC medications suggested
+   - Self-care instructions
 
-6. **SYMPTOM ASSESSMENT**
-   - Severity: [Mild / Moderate / Severe based on description]
-   - Impact on daily activities: [Description]
-   - Sleep disturbance: [Yes/No and details]
+6. FOLLOW-UP
+   - When to see doctor
+   - Red flags
+   - Expected recovery
 
-7. **RED FLAGS IDENTIFIED**
-   - Any emergency warning signs present
-   - Urgent care recommendations made
+Be thorough and extract exact information from conversation.`;
 
-8. **AI PRELIMINARY ASSESSMENT**
-   - Possible differential diagnoses suggested during conversation
-   - Rationale for each possibility
-
-9. **RECOMMENDATIONS PROVIDED**
-   - Self-care measures advised
-   - OTC medications suggested (with dosages)
-   - Home remedies mentioned
-   - Follow-up timeline suggested
-
-10. **DOCTOR'S ATTENTION POINTS**
-    - Key symptoms requiring clinical evaluation
-    - Suggested diagnostic tests (if any were mentioned)
-    - Concerns requiring immediate attention
-
-11. **PATIENT QUESTIONS & CONCERNS**
-    - Specific questions patient asked
-    - Areas of concern patient expressed
-
-Format the report professionally, use medical terminology appropriately, and make it clear, organized, and easy for a doctor to review quickly. Use bullet points and structured formatting for easy scanning.`;
+    console.log("🤖 Calling Grok for report...");
 
     const response = await grok.chat.completions.create({
       model: "x-ai/grok-4-fast:free",
       messages: [{ role: "user", content: reportPrompt }],
-      temperature: 0.3, // Lower for more consistent, factual reporting
-      max_tokens: 1500,
+      temperature: 0.3,
+      max_tokens: 2000,
     });
 
-    const report =
-      response.choices[0]?.message?.content || "Unable to generate report";
+    const report = response.choices[0]?.message?.content;
 
-    console.log("✅ Report generated successfully");
+    if (!report) {
+      throw new Error("Empty report");
+    }
+
+    console.log("✅ Report generated:", report.length, "chars");
 
     return NextResponse.json({
       report,
       generatedAt: new Date().toISOString(),
       sessionId,
+      success: true,
     });
   } catch (error: any) {
-    console.error("❌ Error generating report:", error);
-    return NextResponse.json(
-      { error: "Failed to generate report", details: error.message },
-      { status: 500 }
-    );
+    console.error("❌ Error:", error.message);
+
+    return NextResponse.json({
+      report: generateFallbackReport(sessionId, []),
+      error: error.message,
+      warning: "Using fallback report",
+    });
   }
 }
