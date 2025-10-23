@@ -37,7 +37,7 @@ const menuItems = [
   {
     id: 3,
     label: "Pricing",
-    href: "/pricing",
+    href: "/Pricing",
     icon: IoPricetagOutline,
     description: "View plans",
   },
