@@ -120,24 +120,25 @@ function HeroCTA() {
   );
 }
 
+// remove vdo 
 function HeroImage() {
-  return (
-    <motion.div
-      className="relative mx-auto flex w-full items-center justify-center"
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1.2, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <HeroVideoDialog
-        animationStyle="from-center"
-        videoSrc="https://imagekit.io/player/embed/rmyd10ywi/Recording%202025-06-29%20204016.mp4?updatedAt=1751212929355&thumbnail=https%3A%2F%2Fik.imagekit.io%2Frmyd10ywi%2FRecording%25202025-06-29%2520204016.mp4%2Fik-thumbnail.jpg%3FupdatedAt%3D1751212929355&updatedAt=1751212929355"
-        // allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-        thumbnailSrc="/dashboard.png"
-        thumbnailAlt="Hero Video"
-        className="border rounded-lg shadow-lg max-w-screen-lg mt-16"
-      />
-    </motion.div>
-  );
+  // return (
+  //   <motion.div
+  //     className="relative mx-auto flex w-full items-center justify-center"
+  //     initial={{ opacity: 0, y: 50 }}
+  //     animate={{ opacity: 1, y: 0 }}
+  //     transition={{ delay: 1.2, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+  //   >
+  //     <HeroVideoDialog
+  //       animationStyle="from-center"
+  //       videoSrc="https://imagekit.io/player/embed/rmyd10ywi/Recording%202025-06-29%20204016.mp4?updatedAt=1751212929355&thumbnail=https%3A%2F%2Fik.imagekit.io%2Frmyd10ywi%2FRecording%25202025-06-29%2520204016.mp4%2Fik-thumbnail.jpg%3FupdatedAt%3D1751212929355&updatedAt=1751212929355"
+  //       // allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+  //       thumbnailSrc="/dashboard.png"
+  //       thumbnailAlt="Hero Video"
+  //       className="border rounded-lg shadow-lg max-w-screen-lg mt-16"
+  //     />
+  //   </motion.div>
+  // );
 }
 
 export default function Hero2() {
