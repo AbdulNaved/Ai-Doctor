@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Docter Agent | Sumama khan",
+  title: "AI Docter Agent | Abdul Naved",
   description: "AI Docter voice agent which can help you to get the best treatment for your health",
 };
 

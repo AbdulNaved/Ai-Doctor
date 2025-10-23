@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -18,16 +15,79 @@ model User {
   id       Int       @id @default(autoincrement())
   email    String    @unique
   name     String
-  credit   Int
+  credit   Int       @default(0)
+  sessions Session[]
+}
+
+model Doctor {
+  id          Int       @id @default(autoincrement())
+  name        String
+  specialist  String
+  image       String?
+  voiceId     String?
+  agentPrompt String?   @db.Text
+  sessions    Session[]
 }
 
 model Session {
-  id          Int    @id @default(autoincrement())
-  sessionId   String @unique
-  notes       String
-  selectedDocter Json?
-  conversation  Json?
-  report        Json?
-  createdBy   String
-  createdOn   String
+  id           Int      @id @default(autoincrement())
+  sessionId    String   @unique
+  notes        String?  @db.Text
+  conversation Json?
+  report       String?  @db.Text
+  createdBy    String
+  createdOn    DateTime @default(now())
+
+  // New fields for medical reports
+  patientName         String?
+  patientAge          String?
+  patientGender       String?
+  conversationHistory String? @db.Text
+  reportGenerated     Boolean @default(false)
+  callDuration        Int?    @default(0)
+
+  // Relations
+  selectedDocter Doctor? @relation(fields: [doctorId], references: [id])
+  doctorId       Int?
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  @@index([createdBy])
+  @@index([sessionId])
+  @@index([userId])
 }
+
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// generator client {
+//   provider = "prisma-client-js"
+//   output   = "../lib/generated/prisma"
+// }
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
+// model User {
+//   id       Int       @id @default(autoincrement())
+//   email    String    @unique
+//   name     String
+//   credit   Int
+// }
+
+// model Session {
+//   id          Int    @id @default(autoincrement())
+//   sessionId   String @unique
+//   notes       String
+//   selectedDocter Json?
+//   conversation  Json?
+//   report        Json?
+//   createdBy   String
+//   createdOn   String
+// }

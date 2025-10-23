@@ -174,68 +174,140 @@ function MedicalVoiceAgent() {
   };
 
   // Main stop call function with report generation
-  const stopCall = async () => {
-    console.log("Stopping call and generating medical report...");
+ const stopCall = async () => {
+   console.log("🛑 Stopping call and generating medical report...");
 
-    setIsCallActive(false);
-    cleanupCall();
+   setIsCallActive(false);
+   cleanupCall();
 
-    // Reset listening/speaking states immediately
-    setIsListening(false);
-    setIsSpeaking(false);
-    setIsTranscribing(false);
+   setIsListening(false);
+   setIsSpeaking(false);
+   setIsTranscribing(false);
 
-    // Generate medical report if conversation happened
-    if (messages.length > 1) {
-      setGeneratingReport(true);
+   // Check if there's a conversation to generate report from
+   if (messages.length > 1) {
+     setGeneratingReport(true);
 
-      try {
-        console.log(
-          "📋 Generating medical report from",
-          messages.length,
-          "messages..."
-        );
+     try {
+       console.log(
+         "📋 Generating medical report from",
+         messages.length,
+         "messages..."
+       );
+       console.log("Messages:", messages);
 
-        const reportResponse = await axios.post("/api/generate-report", {
-          conversationHistory: messages,
-          patientInfo: {
-            doctorName: doctorSpecialist,
-            sessionId: sesstionId,
-          },
-          sessionId: sesstionId,
-        });
+       // Step 1: Generate the report
+       const reportResponse = await axios.post("/api/generate-report", {
+         conversationHistory: messages,
+         patientInfo: {
+           doctorName: doctorSpecialist || "AI Doctor",
+           sessionId: sesstionId,
+         },
+         sessionId: sesstionId,
+         callDuration: callDuration,
+       });
 
-        const report = reportResponse.data.report;
-        setMedicalReport(report);
+       console.log("Report API Response:", reportResponse.data);
 
-        // Save report to database
-        await axios.put("/api/session-chat", {
-          sessionId: sesstionId,
-          report: report,
-        });
+       const generatedReport = reportResponse.data.report;
 
-        console.log("✅ Medical report generated and saved");
+       if (!generatedReport) {
+         throw new Error("No report content received");
+       }
 
-        // Show report modal
-        setShowReportModal(true);
-      } catch (error) {
-        console.error("❌ Error generating report:", error);
-        setError("Failed to generate medical report. Please try again.");
-      } finally {
-        setGeneratingReport(false);
-      }
-    } else {
-      console.log("No conversation to generate report from");
-    }
+       console.log(
+         "✅ Report generated:",
+         generatedReport.substring(0, 100) + "..."
+       );
 
-    // Reset UI state
-    setUserCaption("");
-    setAssistantCaption("");
-    setCurrentAssistantText("");
-    setCallDuration(0);
+       setMedicalReport(generatedReport);
 
-    console.log("Call stopped successfully");
-  };
+       // Step 2: Save the report to the session
+       console.log("💾 Saving report to session:", sesstionId);
+
+       // Extract patient info from conversation
+       const extractName = (msgs: any[]) => {
+         for (const msg of msgs) {
+           const match = msg.content.match(
+             /(?:my name is|i'm|i am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i
+           );
+           if (match) return match[1];
+         }
+         return "Patient";
+       };
+
+       const extractAge = (msgs: any[]) => {
+         for (const msg of msgs) {
+           const match = msg.content.match(
+             /(?:i'm|i am|age)\s+(\d{1,3})(?:\s+years?\s+old)?/i
+           );
+           if (match) return match[1];
+         }
+         return "N/A";
+       };
+
+       const extractGender = (msgs: any[]) => {
+         for (const msg of msgs) {
+           if (/\b(male|man|boy)\b/i.test(msg.content)) return "Male";
+           if (/\b(female|woman|girl)\b/i.test(msg.content)) return "Female";
+         }
+         return "N/A";
+       };
+
+       const updateResponse = await axios.put("/api/session-chat", {
+         sessionId: sesstionId,
+         report: generatedReport,
+         conversationHistory: JSON.stringify(messages),
+         callDuration: callDuration,
+         patientName: extractName(messages),
+         patientAge: extractAge(messages),
+         patientGender: extractGender(messages),
+       });
+
+       console.log("✅ Report saved to database:", updateResponse.data);
+
+       // Show success modal briefly
+       setShowReportModal(true);
+
+       // Redirect to dashboard after 2 seconds
+       setTimeout(() => {
+         console.log("🔄 Redirecting to dashboard...");
+         window.location.href = "/dashboard";
+       }, 2000);
+     } catch (error: any) {
+       console.error("❌ Error in report generation/saving:", error);
+       console.error("Error response:", error.response?.data);
+       console.error("Error message:", error.message);
+
+       setError("Failed to generate medical report. Please try again.");
+
+       // Still redirect after error
+       setTimeout(() => {
+         window.location.href = "/dashboard";
+       }, 1500);
+     } finally {
+       setGeneratingReport(false);
+     }
+   } else {
+     console.log(
+       "⚠️ No conversation to generate report from (only",
+       messages.length,
+       "messages)"
+     );
+     // Redirect immediately if no conversation
+     setTimeout(() => {
+       window.location.href = "/dashboard";
+     }, 500);
+   }
+
+   // Reset UI state
+   setUserCaption("");
+   setAssistantCaption("");
+   setCurrentAssistantText("");
+   setCallDuration(0);
+ };
+
+
 
   const handleTranscript = useCallback(
     (transcript: string, isFinal: boolean) => {
@@ -521,8 +593,7 @@ function MedicalVoiceAgent() {
                   Generating Medical Report
                 </h3>
                 <p className="text-gray-600">
-                  Analyzing conversation and creating comprehensive symptom
-                  diary...
+                  Analyzing conversation and creating comprehensive report...
                 </p>
               </div>
             </div>
@@ -530,58 +601,73 @@ function MedicalVoiceAgent() {
         </div>
       )}
 
+      {/* Success Modal */}
+      {showReportModal && medicalReport && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md p-8 text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-12 h-12 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Report Generated!
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Your medical consultation report has been successfully created and
+              saved.
+            </p>
+            <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
+          </div>
+        </div>
+      )}
+
       {/* Medical Report Modal */}
       {showReportModal && medicalReport && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b flex items-center justify-between bg-blue-50">
-              <div className="flex items-center gap-3">
-                <FileText className="w-7 h-7 text-blue-600" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    Medical Consultation Report
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Session ID: {sesstionId}
-                  </p>
-                </div>
+          <div className="bg-white rounded-xl shadow-2xl max-w-md p-8 text-center animate-in zoom-in duration-300">
+            <div className="mb-4 flex justify-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-12 h-12 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
               </div>
-              <button
-                onClick={() => setShowReportModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
-              >
-                ×
-              </button>
             </div>
-
-            <div className="p-6 overflow-y-auto max-h-[60vh] bg-gray-50">
-              <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed bg-white p-6 rounded-lg shadow-inner">
-                {medicalReport}
-              </pre>
-            </div>
-
-            <div className="p-6 border-t flex gap-3 justify-end bg-gray-50">
-              <Button
-                onClick={downloadReport}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-              >
-                <Download className="w-4 h-4" />
-                Download Report
-              </Button>
-              <Button
-                onClick={printReport}
-                className="flex items-center gap-2"
-                variant="outline"
-              >
-                <Printer className="w-4 h-4" />
-                Print Report
-              </Button>
-              <Button
-                onClick={() => setShowReportModal(false)}
-                variant="secondary"
-              >
-                Close
-              </Button>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Report Generated!
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Your medical consultation report has been successfully created and
+              saved.
+            </p>
+            <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
+            <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-600 h-2 rounded-full animate-pulse"
+                style={{ width: "100%" }}
+              ></div>
             </div>
           </div>
         </div>
