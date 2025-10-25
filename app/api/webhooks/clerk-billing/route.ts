@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return new Response("Webhook secret not configured", { status: 500 });
   }
 
-  // ✅ FIX: await headers() because it returns a Promise in Next 15+
+  // ✅ await headers() for Next.js 15
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
@@ -31,7 +31,6 @@ export async function POST(req: Request) {
 
   const wh = new Webhook(WEBHOOK_SECRET);
 
-  // ✅ Allow both Clerk's default events and custom billing events
   type ExtendedWebhookEvent = WebhookEvent | { type: string; data: any };
   let evt: ExtendedWebhookEvent;
 
@@ -90,9 +89,9 @@ export async function POST(req: Request) {
       console.log("✅ Database subscription upserted:", dbSubscription);
 
       try {
-        // ✅ FIX: await clerkClient() before accessing .users
-        const client = await clerkClient();
-        await client.users.updateUserMetadata(userId, {
+        // ✅ FIX: Initialize clerkClient as async function
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(userId, {
           publicMetadata: {
             subscriptionStatus: subscriptionData.status || "active",
             subscriptionId: subscriptionData.id,
@@ -126,9 +125,9 @@ export async function POST(req: Request) {
         },
       });
 
-      // ✅ FIX: await clerkClient() before accessing .users
-      const client = await clerkClient();
-      await client.users.updateUserMetadata(userId, {
+      // ✅ FIX: Initialize clerkClient as async function
+      const clerk = await clerkClient();
+      await clerk.users.updateUserMetadata(userId, {
         publicMetadata: {
           subscriptionStatus: "canceled",
           updatedAt: new Date().toISOString(),
