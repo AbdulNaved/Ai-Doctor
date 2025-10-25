@@ -3,8 +3,8 @@
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Printer, X } from "lucide-react";
-import { Session } from "@/types/session";
-
+// import { Session } from "@/types/session";
+import { Session } from "../types/session";
 interface ReportModalProps {
   report: string;
   session: Session;

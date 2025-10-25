@@ -44,7 +44,7 @@ const menuItems = [
   {
     id: 4,
     label: "Profile",
-    href: "/profile",
+    href: "/Profile",
     icon: IoPersonOutline,
     description: "Your profile",
   },

@@ -27,7 +27,7 @@ export const siteConfig = {
     },
     {
       label: "Pricing",
-      href: "#pricing",
+      href: "#Pricing",
     },
     {
       trigger: "Resources",

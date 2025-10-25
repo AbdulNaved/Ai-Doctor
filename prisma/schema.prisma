@@ -57,6 +57,98 @@ model Session {
   @@index([sessionId])
   @@index([userId])
 }
+model Subscription {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  status           String   // "active", "canceled", "past_due"
+  planId           String   // "free", "basic", "pro"
+  subscriptionId   String   @unique
+  currentPeriodEnd DateTime
+  creditsRemaining Int      @default(0) // Track remaining consultation credits
+  creditsTotal     Int      @default(0) // Total credits for the plan
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([subscriptionId])
+}
+
+// model Subscription {
+//   id               String   @id @default(cuid())
+//   userId           String   @unique // Clerk user ID (string like "user_2xxxxx")
+//   status           String   // "active", "canceled", "past_due", "incomplete", "trialing"
+//   planId           String
+//   subscriptionId   String   @unique
+//   currentPeriodEnd DateTime
+//   createdAt        DateTime @default(now())
+//   updatedAt        DateTime @updatedAt
+
+//   @@index([userId])
+//   @@index([status])
+//   @@index([subscriptionId])
+// }
+
+
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// generator client {
+//   provider = "prisma-client-js"
+//   output   = "../lib/generated/prisma"
+// }
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
+// model User {
+//   id       Int       @id @default(autoincrement())
+//   email    String    @unique
+//   name     String
+//   credit   Int       @default(0)
+//   sessions Session[]
+// }
+
+// model Doctor {
+//   id          Int       @id @default(autoincrement())
+//   name        String
+//   specialist  String
+//   image       String?
+//   voiceId     String?
+//   agentPrompt String?   @db.Text
+//   sessions    Session[]
+// }
+
+// model Session {
+//   id           Int      @id @default(autoincrement())
+//   sessionId    String   @unique
+//   notes        String?  @db.Text
+//   conversation Json?
+//   report       String?  @db.Text
+//   createdBy    String
+//   createdOn    DateTime @default(now())
+
+//   // New fields for medical reports
+//   patientName         String?
+//   patientAge          String?
+//   patientGender       String?
+//   conversationHistory String? @db.Text
+//   reportGenerated     Boolean @default(false)
+//   callDuration        Int?    @default(0)
+
+//   // Relations
+//   selectedDocter Doctor? @relation(fields: [doctorId], references: [id])
+//   doctorId       Int?
+
+//   user   User? @relation(fields: [userId], references: [id])
+//   userId Int?
+
+//   @@index([createdBy])
+//   @@index([sessionId])
+//   @@index([userId])
+// }
 
 // // This is your Prisma schema file,
 // // learn more about it in the docs: https://pris.ly/d/prisma-schema
