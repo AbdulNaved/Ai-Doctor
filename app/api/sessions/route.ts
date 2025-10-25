@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/utils/db";
 
+// ✅ ADD THESE EXPORTS TO FIX BUILD ERROR
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   try {
     console.log("📥 Sessions API called");
