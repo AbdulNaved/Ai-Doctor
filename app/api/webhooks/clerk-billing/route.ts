@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
   const wh = new Webhook(WEBHOOK_SECRET);
 
-  // ✅ Allow both Clerk’s default events and custom billing events
+  // ✅ Allow both Clerk's default events and custom billing events
   type ExtendedWebhookEvent = WebhookEvent | { type: string; data: any };
   let evt: ExtendedWebhookEvent;
 
@@ -90,7 +90,9 @@ export async function POST(req: Request) {
       console.log("✅ Database subscription upserted:", dbSubscription);
 
       try {
-        await clerkClient.users.updateUserMetadata(userId, {
+        // ✅ FIX: await clerkClient() before accessing .users
+        const client = await clerkClient();
+        await client.users.updateUserMetadata(userId, {
           publicMetadata: {
             subscriptionStatus: subscriptionData.status || "active",
             subscriptionId: subscriptionData.id,
@@ -124,7 +126,9 @@ export async function POST(req: Request) {
         },
       });
 
-      await clerkClient.users.updateUserMetadata(userId, {
+      // ✅ FIX: await clerkClient() before accessing .users
+      const client = await clerkClient();
+      await client.users.updateUserMetadata(userId, {
         publicMetadata: {
           subscriptionStatus: "canceled",
           updatedAt: new Date().toISOString(),
