@@ -1,12 +1,10 @@
-"use server";
-
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/utils/db";
 import { clerkClient } from "@clerk/nextjs/server";
 
-// ✅ ADD THESE EXPORTS TO FIX BUILD ERROR
+// ✅ Route configuration exports
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -93,7 +91,6 @@ export async function POST(req: Request) {
       console.log("✅ Database subscription upserted:", dbSubscription);
 
       try {
-        // ✅ FIX: Initialize clerkClient as async function
         const clerk = await clerkClient();
         await clerk.users.updateUserMetadata(userId, {
           publicMetadata: {
@@ -129,7 +126,6 @@ export async function POST(req: Request) {
         },
       });
 
-      // ✅ FIX: Initialize clerkClient as async function
       const clerk = await clerkClient();
       await clerk.users.updateUserMetadata(userId, {
         publicMetadata: {
