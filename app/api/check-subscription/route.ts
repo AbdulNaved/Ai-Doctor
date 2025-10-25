@@ -2,6 +2,10 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/utils/db";
 
+// ✅ Move these to the TOP before the GET function
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET() {
   try {
     const { userId } = await auth();
@@ -74,9 +78,6 @@ export async function GET() {
   }
 }
 
-// Add runtime config to prevent static optimization
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 // import { auth, currentUser } from "@clerk/nextjs/server";
 // import { NextResponse } from "next/server";
