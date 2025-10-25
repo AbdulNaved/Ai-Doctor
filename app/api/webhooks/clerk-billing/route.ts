@@ -6,6 +6,10 @@ import type { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/utils/db";
 import { clerkClient } from "@clerk/nextjs/server";
 
+// ✅ ADD THESE EXPORTS TO FIX BUILD ERROR
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
