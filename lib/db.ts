@@ -5,7 +5,7 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-export const prisma =
+export const db =
   global.prisma ||
   new PrismaClient({
     log:
@@ -15,5 +15,26 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== "production") {
-  global.prisma = prisma;
+  global.prisma = db;
 }
+
+
+// import { PrismaClient } from "@/lib/generated/prisma";
+
+// declare global {
+//   // eslint-disable-next-line no-var
+//   var prisma: PrismaClient | undefined;
+// }
+
+// export const prisma =
+//   global.prisma ||
+//   new PrismaClient({
+//     log:
+//       process.env.NODE_ENV === "development"
+//         ? ["query", "error", "warn"]
+//         : ["error"],
+//   });
+
+// if (process.env.NODE_ENV !== "production") {
+//   global.prisma = prisma;
+// }

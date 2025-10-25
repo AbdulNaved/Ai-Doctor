@@ -2,7 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/utils/db";
 
-// ✅ Move these to the TOP before the GET function
+// ✅ Route configuration at the top
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -77,7 +77,6 @@ export async function GET() {
     );
   }
 }
-
 
 // import { auth, currentUser } from "@clerk/nextjs/server";
 // import { NextResponse } from "next/server";
