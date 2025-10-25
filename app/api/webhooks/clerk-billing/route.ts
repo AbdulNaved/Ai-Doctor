@@ -14,7 +14,8 @@ export async function POST(req: Request) {
     return new Response("Webhook secret not configured", { status: 500 });
   }
 
-  const headerPayload = headers();
+  // ✅ FIX: await headers() because it returns a Promise in Next 15+
+  const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
@@ -88,7 +89,6 @@ export async function POST(req: Request) {
 
       console.log("✅ Database subscription upserted:", dbSubscription);
 
-      // 🟢 Update Clerk metadata
       try {
         await clerkClient.users.updateUserMetadata(userId, {
           publicMetadata: {
@@ -139,7 +139,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // 🟡 Unknown event
     console.log("ℹ️ Unhandled event type:", eventType);
     return new Response("Event type not handled", { status: 200 });
   } catch (error: any) {
