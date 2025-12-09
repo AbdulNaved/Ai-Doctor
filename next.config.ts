@@ -1,5 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+import type { Configuration as WebpackConfig } from "webpack";
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { hostname: "localhost" },
@@ -8,8 +10,18 @@ const nextConfig = {
     ],
   },
   eslint: {
-    // Prevent build from failing because of lint errors in generated files (Prisma)
     ignoreDuringBuilds: true,
+  },
+  webpack(config: WebpackConfig) {
+    config.watchOptions = {
+      ignored: [
+        "**/node_modules",
+        "**/.git",
+        "C:/Users/91860/Application Data/**",
+      ],
+    };
+
+    return config;
   },
 };
 
