@@ -1,7 +1,15 @@
-// app/api/sessions/create/route.ts (or wherever you create sessions)
+// app/api/sessions/create/route.ts
 import { db } from "@/utils/db";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
+
+export const dynamic = "force-dynamic";
+
+// Helper function to generate unique session ID
+function generateSessionId(): string {
+  return `session-${randomUUID()}`;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +29,12 @@ export async function POST(req: NextRequest) {
         patientAge: body.patientAge,
         patientGender: body.patientGender,
         doctorId: body.doctorId,
-        // ... other fields
+        conversationHistory: body.conversationHistory,
+        callDuration: body.callDuration || 0,
+        reportGenerated: false,
+        notes: body.notes,
+        conversation: body.conversation,
+        report: body.report,
       },
     });
 
@@ -30,7 +43,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Error creating session:", error);
     return NextResponse.json(
-      { error: "Failed to create session" },
+      { error: "Failed to create session", details: error.message },
       { status: 500 }
     );
   }
