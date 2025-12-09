@@ -42,16 +42,6 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* New Consultation Button */}
-        {/* <div className="mb-8">
-          <button
-            onClick={() => router.push("/dashboard/new-consultation")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-          >
-            + New Consultation
-          </button>
-        </div> */}
-
         {/* Consultation History */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
@@ -237,23 +227,3 @@ function downloadPDF(session: any) {
   element.click();
   document.body.removeChild(element);
 }
-
-// import React from 'react'
-// import HistoryList from './_components/HistoryList'
-// import DoctorsList from './_components/DoctorsList'
-// import AddNewSession from './_components/AddNewSession'
-
-// function Dashboard() {
-//   return (
-//     <div>
-//       <div className="flex justify-between items-center">
-//         <h2 className="text-2xl font-bold">My Dashboard</h2>
-//         <AddNewSession />
-//       </div>
-//       <HistoryList />
-//       <DoctorsList />
-//     </div>
-//   )
-// }
-
-// export default Dashboard
