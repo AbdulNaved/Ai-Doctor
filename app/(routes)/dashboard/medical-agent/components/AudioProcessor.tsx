@@ -97,49 +97,102 @@ const AudioProcessor = ({
     }
   };
 
+  // const connectToAssemblyAI = async () => {
+  //   const token = process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY;
+
+  //   if (!token) {
+  //     onError("AssemblyAI API key is missing. Please check your environment variables.");
+  //     return;
+  //   }
+
+  //   try {
+
+  //     if (assemblySocketRef.current) {
+  //       assemblySocketRef.current.close();
+  //       assemblySocketRef.current = null;
+  //     }
+
+
+  //     assemblySocketRef.current = new WebSocket(`wss:api.assemblyai.com/v2/realtime/ws?sample_rate=16000`);
+
+  //     assemblySocketRef.current.onopen = () => {
+  //       setIsAssemblyConnected(true);
+  //       reconnectAttemptsRef.current = 0;
+
+
+  //       if (assemblySocketRef.current) {
+  //         assemblySocketRef.current.send(JSON.stringify({
+  //           token: token,
+  //           expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+  //         }));
+  //       }
+  //     };
+
+  //     assemblySocketRef.current.onmessage = (message) => {
+  //       const data = JSON.parse(message.data);
+
+  //       if (data.message_type === 'FinalTranscript') {
+  //         onTranscriptReceived(data.text, true);
+  //       } else if (data.message_type === 'PartialTranscript') {
+  //         if (data.text && data.text.trim() !== "") {
+  //           onTranscriptReceived(data.text, false);
+  //         }
+  //       } else if (data.message_type === 'SessionBegins') {
+  //       } else if (data.message_type === 'Error') {
+  //         onError(`Speech recognition error: ${data.error || 'Unknown error'}`);
+  //       }
+  //     };
+
+  //     assemblySocketRef.current.onerror = () => setIsAssemblyConnected(false);
+
+  //     assemblySocketRef.current.onclose = () => {
+  //       setIsAssemblyConnected(false);
+  //     };
+  //   } catch {
+  //     onError("Failed to connect to speech recognition service.");
+  //     setIsAssemblyConnected(false);
+  //   }
+  // };
+   
   const connectToAssemblyAI = async () => {
-    const token = process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY;
+    const token = process.env.NEXT_PUBLIC_ASSEMBLYAI_TEMP_TOKEN;
 
     if (!token) {
-      onError("AssemblyAI API key is missing. Please check your environment variables.");
+      onError(
+        "AssemblyAI API key is missing. Please check your environment variables."
+      );
       return;
     }
 
     try {
-
       if (assemblySocketRef.current) {
         assemblySocketRef.current.close();
         assemblySocketRef.current = null;
       }
 
+      const url = `wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${encodeURIComponent(
+        token
+      )}`;
 
-      assemblySocketRef.current = new WebSocket(`wss:api.assemblyai.com/v2/realtime/ws?sample_rate=16000`);
+      assemblySocketRef.current = new WebSocket(url);
 
       assemblySocketRef.current.onopen = () => {
         setIsAssemblyConnected(true);
         reconnectAttemptsRef.current = 0;
-
-
-        if (assemblySocketRef.current) {
-          assemblySocketRef.current.send(JSON.stringify({
-            token: token,
-            expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString()
-          }));
-        }
+        // No need to send token in a JSON message here
       };
 
       assemblySocketRef.current.onmessage = (message) => {
         const data = JSON.parse(message.data);
 
-        if (data.message_type === 'FinalTranscript') {
+        if (data.message_type === "FinalTranscript") {
           onTranscriptReceived(data.text, true);
-        } else if (data.message_type === 'PartialTranscript') {
+        } else if (data.message_type === "PartialTranscript") {
           if (data.text && data.text.trim() !== "") {
             onTranscriptReceived(data.text, false);
           }
-        } else if (data.message_type === 'SessionBegins') {
-        } else if (data.message_type === 'Error') {
-          onError(`Speech recognition error: ${data.error || 'Unknown error'}`);
+        } else if (data.message_type === "Error") {
+          onError(`Speech recognition error: ${data.error || "Unknown error"}`);
         }
       };
 
